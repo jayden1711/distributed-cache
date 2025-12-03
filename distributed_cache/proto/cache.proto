@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package cache;
+
+// Cache service definition
+service CacheService {
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Put(PutRequest) returns (PutResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc BatchPut(stream PutRequest) returns (BatchResponse);
+  rpc BatchGet(stream GetRequest) returns (stream GetResponse);
+}
+
+// Gossip service for failure detection and cluster management
+service GossipService {
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc GetClusterState(ClusterStateRequest) returns (ClusterStateResponse);
+  rpc NotifyNodeJoin(NodeInfo) returns (AckResponse);
+  rpc NotifyNodeFailure(NodeInfo) returns (AckResponse);
+}
+
+// Replication service for data consistency
+service ReplicationService {
+  rpc Replicate(ReplicationRequest) returns (ReplicationResponse);
+  rpc SyncData(SyncRequest) returns (stream SyncResponse);
+}
+
+message GetRequest {
+  string key = 1;
+  ConsistencyLevel consistency = 2;
+}
+
+message GetResponse {
+  bool found = 1;
+  bytes value = 2;
+  uint64 version = 3;
+}
+
+message PutRequest {
+  string key = 1;
+  bytes value = 2;
+  uint32 ttl_seconds = 3;
+  ConsistencyLevel consistency = 4;
+}
+
+message PutResponse {
+  bool success = 1;
+  uint64 version = 2;
+}
+
+message DeleteRequest {
+  string key = 1;
+  ConsistencyLevel consistency = 2;
+}
+
+message DeleteResponse {
+  bool success = 1;
+}
+
+message BatchResponse {
+  uint32 success_count = 1;
+  uint32 failure_count = 2;
+}
+
+message HeartbeatRequest {
+  NodeInfo node = 1;
+  uint64 timestamp = 2;
+}
+
+message HeartbeatResponse {
+  bool ack = 1;
+  repeated NodeInfo known_nodes = 2;
+}
+
+message ClusterStateRequest {
+  string node_id = 1;
+}
+
+message ClusterStateResponse {
+  repeated NodeInfo nodes = 1;
+  repeated string failed_nodes = 2;
+}
+
+message NodeInfo {
+  string node_id = 1;
+  string address = 2;
+  uint32 port = 3;
+  uint64 last_seen = 4;
+  NodeStatus status = 5;
+}
+
+message AckResponse {
+  bool success = 1;
+}
+
+message ReplicationRequest {
+  string key = 1;
+  bytes value = 2;
+  uint64 version = 3;
+  uint32 ttl_seconds = 4;
+}
+
+message ReplicationResponse {
+  bool success = 1;
+}
+
+message SyncRequest {
+  string node_id = 1;
+  repeated string key_prefixes = 2;
+}
+
+message SyncResponse {
+  string key = 1;
+  bytes value = 2;
+  uint64 version = 3;
+  uint32 ttl_seconds = 4;
+}
+
+enum ConsistencyLevel {
+  ONE = 0;      // Write/read to one replica
+  QUORUM = 1;   // Write/read to majority
+  ALL = 2;      // Write/read to all replicas
+}
+
+enum NodeStatus {
+  ALIVE = 0;
+  SUSPECTED = 1;
+  DEAD = 2;
+}
