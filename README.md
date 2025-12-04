@@ -1,4 +1,4 @@
-Distributed Cache
+# Distributed Cache
 
 A high-performance distributed cache system built in C++ with gRPC for inter-node communication and Protocol Buffers for serialization.
 Features
